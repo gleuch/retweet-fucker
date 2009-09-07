@@ -1,2 +1,11 @@
-%h1= @title
-= yield
+!!! Strict
+%html{:xmlns=>'http://www.w3.org/1999/xhtml', :'xml:lang'=>'en', :lang=>'en'}
+  %head
+    %title= (!@title.blank? ? "#{@title} / " : '') + 'Re-tweet Fucker / A F.A.T. Lab Project'
+    %link{:rel=>'icon', :href=>'/favicon.ico'}
+    %link{:href=>'/stylesheets/screen.css', :media=>'all', :rel =>'stylesheet', :type=>'text/css'}
+
+  %body
+    - if @title
+      %h1= @title
+    = yield

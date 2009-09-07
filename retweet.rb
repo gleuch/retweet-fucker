@@ -13,19 +13,27 @@ configure do
   DataMapper.auto_upgrade!
 
   set :sessions, true
-
-  @title = 'Re-tweet Fucker / A F.A.T. Lab Project'
 end
 
 helpers do
   def twitter_connect(user={})
-    unless user.blank?
-      @twitter_client = TwitterOAuth::Client.new(:consumer_key => configatron.twitter_oauth_token, :consumer_secret => configatron.twitter_oauth_secret, :token => user.oauth_token, :secret => user.oauth_secret) rescue nil
-    else
-      @twitter_client = TwitterOAuth::Client.new(:consumer_key => configatron.twitter_oauth_token, :consumer_secret => configatron.twitter_oauth_secret) rescue nil
+    begin
+      unless user.blank?
+        @twitter_client = TwitterOAuth::Client.new(:consumer_key => configatron.twitter_oauth_token, :consumer_secret => configatron.twitter_oauth_secret, :token => user.oauth_token, :secret => user.oauth_secret) rescue nil
+      else
+        @twitter_client = TwitterOAuth::Client.new(:consumer_key => configatron.twitter_oauth_token, :consumer_secret => configatron.twitter_oauth_secret) rescue nil
+      end
+    rescue
+      twitter_fail
     end
 
     # Do some error here if connection fails!
+  end
+
+  def twitter_fail(msg=false)
+    msg = 'An error has occured while trying to talk to Twitter. Please try again.' if msg.blank?
+    @error = msg
+    haml :fail and return
   end
 
   def get_user
@@ -46,7 +54,8 @@ helpers do
         twitter_connect(@base_user)
 
         unless @twitter_client.blank?
-          info = @twitter_client.info
+          info = @twitter_client.info rescue nil
+
           @tweet = "RT: @#{info['screen_name']}: %s #{configatron.twitter_hashtag}"
           
           x = 142-@tweet.length
@@ -71,48 +80,61 @@ helpers do
 
       @users = User.find_by_sql("SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users WHERE id != #{@base_user.id} ORDER BY RANDOM() LIMIT #{total}")#, :property => [ :id, :account_id, :screen_name, :oauth_token, :oauth_secret ])
       @users.each do |user|
-        twitter_connect(user)
-        @twitter_client.update(@tweet)
+        begin
+          twitter_connect(user)
+          @twitter_client.update(@tweet)
+        rescue
+          twitter_fail('An error has occured while trying to post a retweet to Twitter. Please try again.')
+        end
       end
-      
-      'Finished.'
+
+      haml :run
     else
-      'No tweets to tweet.'
+      @error = 'Could not load a tweet for this launch.'
+      haml :fail
     end
-    
   end
-
-
-
 end
 
 
 get '/' do
   get_user unless session[:user].blank?
   unless @user.blank?
-    "Thanks for signing up. There is nothing else you need to do. If you want to remove this, then goto your Twitter Settings > Connections, and remove it."
+    haml :thanks
   else
-    "Hello FFFFFattie! <a href=\"/connect\">Connect now!</a>"
+    haml :home
   end
 end
 
 
 # Initiate the conversation with Twitter
 get '/connect' do
+  @title = 'Connect to Twitter'
+
   twitter_connect
-  request_token = @twitter_client.request_token(:oauth_callback => 'http://localhost:4567/auth')
-  session[:request_token] = request_token.token
-  session[:request_token_secret] = request_token.secret
-  redirect request_token.authorize_url.gsub('authorize', 'authenticate')
+  begin
+    request_token = @twitter_client.request_token(:oauth_callback => 'http://localhost:4567/auth')
+    session[:request_token] = request_token.token
+    session[:request_token_secret] = request_token.secret
+    redirect request_token.authorize_url.gsub('authorize', 'authenticate')
+  rescue
+    twitter_fail('An error has occured while trying to authenticate with Twitter. Please try again.')
+  end
 end
 
 # Callback URL to return to after talking with Twitter
 get '/auth' do
+  @title = 'Authenticate with Twitter'
+
   twitter_connect
   @access_token = @twitter_client.authorize(session[:request_token], session[:request_token_secret], :oauth_verifier => params[:oauth_verifier])
   
   if @twitter_client.authorized?
-    info = @twitter_client.info
+    begin
+      info = @twitter_client.info
+    rescue
+      twitter_fail and return
+    end
 
     @user = User.first_or_create(:account_id => info['id'])
     @user.update_attributes(
@@ -128,8 +150,12 @@ get '/auth' do
     session[:request_token] = nil
     session[:request_token_secret] = nil
 
-    twitter_connect(@user)
-    @twitter_client.update("#{twitter_sync_tweet} #{twiter_hashtag}")
+    begin
+      twitter_connect(@user)
+      @twitter_client.update("#{twitter_sync_tweet} #{twiter_hashtag}")
+    rescue
+      twitter_fail('An error has occured while trying to post a tweet to Twitter. Please try again.')
+    end
     redirect '/'
   else
     redirect '/'
@@ -137,9 +163,12 @@ get '/auth' do
 end
 
 get '/run/*' do
+  @title = 'Launch Retweet Hell'
+
   if params[:splat].to_s == configatron.secret_launch_code.to_s
     launch_retweet_hell
   else
-    'WTF!? You ain\'t got access to this. Fuck off.'
+    @error = 'WTF!? You ain\'t got access to this. Fuck off.'
+    haml :fail
   end
 end
