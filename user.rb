@@ -1,6 +1,4 @@
 class User
-  REP = '<+<<*>>+>'
-
   include DataMapper::Resource
 
   property :id,               Serial

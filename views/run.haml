@@ -1,4 +1,4 @@
-%p Re-tweet: #{@tweet}
+%p Re-tweet: #{@tweet.retweet}
 - unless @users.blank?
   %p A retweet was sent out to the following users:
   %p= @users.map{|u| u.screen_name}.join(', ')

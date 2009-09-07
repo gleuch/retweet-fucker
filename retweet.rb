@@ -4,7 +4,7 @@ require 'twitter_oauth'
 require 'configatron'
 
 configure do
-  %w(dm-core dm-aggregates dm-timestamps user).each { |lib| require lib }
+  %w(dm-core dm-aggregates dm-timestamps user tweet).each { |lib| require lib }
 
   ROOT = File.expand_path(File.dirname(__FILE__))
   configatron.configure_from_yaml("#{ROOT}/settings.yml", :hash => Sinatra::Application.environment.to_s)
@@ -24,67 +24,51 @@ helpers do
         @twitter_client = TwitterOAuth::Client.new(:consumer_key => configatron.twitter_oauth_token, :consumer_secret => configatron.twitter_oauth_secret) rescue nil
       end
     rescue
-      twitter_fail
+      @twitter_client = nil
     end
-
-    # Do some error here if connection fails!
   end
 
   def twitter_fail(msg=false)
-    msg = 'An error has occured while trying to talk to Twitter. Please try again.' if msg.blank?
-    @error = msg
+    @error = (!msg.blank? ? msg : 'An error has occured while trying to talk to Twitter. Please try again.')
     haml :fail and return
   end
 
-  def get_user
-    @user = User.first(:id => session[:user])
-  end
+  def get_user; @user = User.first(:id => session[:user]) rescue nil; end
 
   def launch_retweet_hell
-    # 1. Get random tweet
-    # 2. Get list of random users (no more than 20% or 500, whichever is less)
-    # 3. Tweet away (and remove failed users -- assume they deleted access)
+    # TODO : Better db connection detection
+    rand = "RANDOM()" # if using SQLite
+    #rand = "RAND()" # if using MySQL
 
-    @base_user, @tweet, user_ct, fail_ct = nil, 'NO TWEET', User.count, 0
-
-    while (@base_user.blank? || fail_ct < 10)
-      @base_user = User.get(1+rand(user_ct)) rescue nil
-
-      unless @base_user.blank?
-        twitter_connect(@base_user)
-
-        unless @twitter_client.blank?
-          info = @twitter_client.info rescue nil
-
-          @tweet = "RT: @#{info['screen_name']}: %s #{configatron.twitter_hashtag}"
-          
-          x = 142-@tweet.length
-          
-          @tweet = @tweet.gsub(/\%s/, (info['status']['text'])[0,x])
-
-          # Don't tweet blank stuff
-          @base_user = nil if @tweet.blank?
-        else
-          # Remove from database -- fuck them.
-          @base_user.destroy
-          @base_user = nil
+    @base_users = User.find_by_sql("SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users ORDER BY #{rand} LIMIT 10")
+    @base_users.each do |user|
+      twitter_connect(user)
+      unless @twitter_client.blank?
+        info = @twitter_client.info rescue nil
+        unless info.blank? || @twitter_client.info['status']['text'].blank?
+          retweet = "RT: @#{info['screen_name']}: %s #{configatron.twitter_hashtag}"
+          retweet = retweet.gsub(/\%s/, (info['status']['text'])[0, (142-retweet.length) ])
+          @tweet = Tweet.create(:account_id => user.account_id, :tweet_id => info['status']['id'], :tweet => info['status']['text'], :retweet => retweet, :sent_at => Time.now)
+          break #end each
         end
+      else
+        # Fucking get rid of the user if they don't validate...
+        user.destroy
       end
-
-      fail_ct += 1
     end
 
     unless @tweet.blank?
-      total = (user_ct * (configatron.twitter_retweet_percent/100.to_f)).round
+      total = (User.count * (configatron.twitter_retweet_percent/100.to_f)).round
       total = configatron.twitter_retweet_max if total > configatron.twitter_retweet_max
 
-      @users = User.find_by_sql("SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users WHERE id != #{@base_user.id} ORDER BY RANDOM() LIMIT #{total}")#, :property => [ :id, :account_id, :screen_name, :oauth_token, :oauth_secret ])
+      @users = User.find_by_sql("SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users WHERE account_id!=#{@tweet.account_id} ORDER BY #{rand} LIMIT #{total}")
       @users.each do |user|
-        begin
-          twitter_connect(user)
-          @twitter_client.update(@tweet)
-        rescue
-          twitter_fail('An error has occured while trying to post a retweet to Twitter. Please try again.')
+        twitter_connect(user)
+        unless @twitter_client.blank?
+          @twitter_client.update(@tweet.retweet)
+        else
+          # Fucking get rid of the user if they don't validate...
+          user.destroy
         end
       end
 
@@ -113,7 +97,7 @@ get '/connect' do
 
   twitter_connect
   begin
-    request_token = @twitter_client.request_token(:oauth_callback => 'http://localhost:4567/auth')
+    request_token = @twitter_client.request_token(:oauth_callback => "http://#{request.env['HTTP_HOST']}/auth")
     session[:request_token] = request_token.token
     session[:request_token_secret] = request_token.secret
     redirect request_token.authorize_url.gsub('authorize', 'authenticate')
@@ -137,12 +121,7 @@ get '/auth' do
     end
 
     @user = User.first_or_create(:account_id => info['id'])
-    @user.update_attributes(
-      :account_id => info['id'],
-      :screen_name => info['screen_name'],
-      :oauth_token => @access_token.token,
-      :oauth_secret => @access_token.secret
-    )
+    @user.update_attributes(:account_id => info['id'], :screen_name => info['screen_name'], :oauth_token => @access_token.token, :oauth_secret => @access_token.secret)
 
     # Set and clear session data
     session[:user] = @user.id
@@ -156,10 +135,9 @@ get '/auth' do
     rescue
       twitter_fail('An error has occured while trying to post a tweet to Twitter. Please try again.')
     end
-    redirect '/'
-  else
-    redirect '/'
   end
+
+  redirect '/'
 end
 
 get '/run/*' do
