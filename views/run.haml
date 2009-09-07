@@ -1,0 +1,6 @@
+%p To tweet: #{@tweet}
+- unless @users.blank?
+  - @users.each do |user|
+    %p= user.screen_name
+- else
+  %p No users.

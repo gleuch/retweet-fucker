@@ -1,0 +1,38 @@
+development: &local
+  site_name:        Retweet Fucker
+  site_url:         http://localhost
+
+  secret_launch_code:     FFFFFAT
+
+  twitter_oauth_token:		ENTER-YOUR-TOKEN-HERE
+  twitter_oauth_secret:		ENTER-YOUR-TOKEN-SECRET-HERE
+
+  twitter_sync_tweet:     'I am now using Retweet Fucker by @fffffat.'
+  twitter_hashtag:        '#rtfuck'
+
+  twitter_retweet_percent:    50
+  twitter_retweet_max:        10
+
+
+  db_connection: sqlite3:///ROOT/retweet.db
+production:
+  <<: *local
+
+
+  site_url:		http://retweet-fucker.fffff.at
+  
+  db_connection: sqlite3:///ROOT/retweet.db
+
+  twitter_retweet_percent:    20
+  twitter_retweet_max:        500
+
+
+staging:
+  <<: *local
+  
+  db_connection: sqlite3:///ROOT/retweet.db
+
+test:
+  <<: *local
+
+  db_connection: sqlite3:///ROOT/retweet.db
