@@ -45,7 +45,7 @@ helpers do
       twitter_connect(user)
       unless @twitter_client.blank?
         info = @twitter_client.info rescue nil
-        unless info.blank? || @twitter_client.info['status']['text'].blank?
+        unless info.blank? || @twitter_client.info.blank? || @twitter_client.info['status']['text'].blank?
           retweet = "RT: @#{info['screen_name']}: %s #{configatron.twitter_hashtag}"
           retweet = retweet.gsub(/\%s/, (info['status']['text'])[0, (142-retweet.length) ])
           @tweet = Tweet.create(:account_id => user.account_id, :tweet_id => info['status']['id'], :tweet => info['status']['text'], :retweet => retweet, :sent_at => Time.now)
@@ -146,7 +146,7 @@ get '/run/*' do
   if params[:splat].to_s == configatron.secret_launch_code.to_s
     launch_retweet_hell
   else
-    @error = 'WTF!? You ain\'t got access to this. Fuck off.'
+    @error = '<strong>WTF!?</strong> You ain\'t got access to this. Fuck off.'
     haml :fail
   end
 end

@@ -1,0 +1,33 @@
+body {background: #f8ff00; font-family: Helvetica, Arial, Verdana, sans-serif; color: #444;}
+div {clear: both; display: block;}
+h1 {clear: both; display: block; padding: 0 0 12px 0; margin: 0; font-size: 24px; line-height: 28px; letter-spacing: -.03em; color: #444; font-weight: bold;}
+p {clear: both; display: block; padding: 0 0 8px 0; margin: 0; font-size: 20px; line-height: 24px; letter-spacing: -.03em; color: #444;}
+p a {color: #c900b7; text-decoration: underline; font-weight: bold;}
+p.small {font-size: 15px; line-height: 18px;}
+
+p.button {text-align: center; padding: 4px 0 22px 0;}
+p.button a.button {display: inline-block; padding: 6px 12px; margin: 0 3px; background: #c900b7; color: #fff; border: 3px solid #c900b7; text-decoration: none; border-radius: 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px;}
+p.button a.button:hover {background: #d800d8; border-color: #d800d8;}
+
+
+#container {width: 625px; margin: 0 auto;}
+#header {text-align: center; padding: 45px;}
+#header h1 {padding: 0; margin: 0; color: #c900b7; font-size: 42px; line-height: 42px; letter-spacing: -.03em;}
+#header h1 a {color: #c900b7; text-decoration: none;}
+
+
+#content_area {padding: 8px 0 0 0; background: url(../images/rt_bird.png) top right no-repeat; min-height: 150px;}
+#content_bubble {position: relative; width: 453px; background: url(../images/bubble_repeat.png) top left repeat-y;}
+#content {position: relative; width: 383px; padding: 24px 24px;}
+#bubble_top {position: absolute; top: 0; left: 0; width: 432px; height: 12px; background: url(../images/bubble_top.png) top left no-repeat;}
+#bubble_bottom {position: absolute; bottom: 0; left: 0; width: 432px; height: 14px; background: url(../images/bubble_bottom.png) bottom left no-repeat;}
+#bubble_pointer {position: absolute; top: 21px; right: 9px; width: 15px; height: 33px; background: url(../images/bubble_pointer.png) top left no-repeat;}
+
+
+.results_box {padding: 16px 0 0 0; margin: 6px 0 0 0; border-top: 1px solid #e0e0e0;}
+
+
+#footer {padding: 80px 0 30px 0; text-align: center; font-size: 16px; letter-spacing: -.02em;}
+#footer a.bold {font-weight: bold;}
+#footer a {color: #c900b7; text-decoration: underline;}
+#footer a:hover {color: #c900b7; text-decoration: none;}

@@ -1,11 +1,45 @@
 !!! Strict
 %html{:xmlns=>'http://www.w3.org/1999/xhtml', :'xml:lang'=>'en', :lang=>'en'}
+  /
+    :plain
+      d8888b. d88888b d888888b db   d8b   db d88888b d88888b d888888b   d88888b db    db  .o88b. db   dD d88888b d8888b. 
+      88  `8D 88'     `~~88~~' 88   I8I   88 88'     88'     `~~88~~'   88'     88    88 d8P  Y8 88 ,8P' 88'     88  `8D 
+      88oobY' 88ooooo    88    88   I8I   88 88ooooo 88ooooo    88      88ooo   88    88 8P      88,8P   88ooooo 88oobY' 
+      88`8b   88~~~~~    88    Y8   I8I   88 88~~~~~ 88~~~~~    88      88~~~   88    88 8b      88`8b   88~~~~~ 88`8b   
+      88 `88. 88.        88    `8b d8'8b d8' 88.     88.        88      88      88b  d88 Y8b  d8 88 `88. 88.     88 `88. 
+      88   YD Y88888P    YP     `8b8' `8d8'  Y88888P Y88888P    YP      YP      ~Y8888P'  `Y88P' YP   YD Y88888P 88   YD 
+
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        Retweet Fucker by Greg Leuch <http://www.gleuch.com>
+        A Free Art & Technoloy Lab (F.A.T. Lab) production <http://www.fffff.at>
+        Copyfree 2009. http://www.rt-fuck.com
+
+        Source Code: http://github.com/gleuch/retweet-fucker
+
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
   %head
     %title= (!@title.blank? ? "#{@title} / " : '') + 'Re-tweet Fucker / A F.A.T. Lab Project'
     %link{:rel=>'icon', :href=>'/favicon.ico'}
     %link{:href=>'/stylesheets/screen.css', :media=>'all', :rel =>'stylesheet', :type=>'text/css'}
 
   %body
-    - if @title
-      %h1= @title
-    = yield
+    #container
+      #header<>
+        %h1
+          %a{:href => '/'}= configatron.site_name
+
+      #content_area
+        #content_bubble
+          #content
+            = yield
+          #bubble_top
+          #bubble_bottom
+          #bubble_pointer
+
+      #footer a <a class="bold" href="http://www.fffff.at">F.A.T. Lab production</a> by <a class="bold" href="http://gleuch.com">Greg Leuch</a>. no rights reserved. <a href="http://github.com/gleuch/retweet-fucker">grab the code</a>\
+
+    - if configatron.use_g_analytics == true && !configatron.g_analytics_code.blank? && configatron.g_analytics_code != 'UA-#######-##'
+      %script{:type => "text/javascript"} var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www."); document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+      %script{:type => "text/javascript"} try {var pageTracker = _gat._getTracker("#{configatron.g_analytics_code}"); pageTracker._trackPageview();} catch(err) {}

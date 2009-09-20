@@ -13,8 +13,11 @@ development: &local
   twitter_retweet_percent:    50
   twitter_retweet_max:        10
 
+  use_g_analytics:            false
+  g_analytics_code:           UA-#######-##
 
   db_connection: sqlite3:///ROOT/retweet.db
+
 production:
   <<: *local
 

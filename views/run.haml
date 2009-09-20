@@ -1,6 +1,11 @@
-%p Re-tweet: #{@tweet.retweet}
-- unless @users.blank?
-  %p A retweet was sent out to the following users:
-  %p= @users.map{|u| u.screen_name}.join(', ')
-- else
-  %p No users were used to retweet.
+.retweet_msg
+  %p= @tweet.retweet.gsub(/^RT\:/i, '<strong>Re-tweet:</strong>')
+
+.results_box
+  - unless @users.blank?
+    %p.small
+      %strong A retweet was sent out to the following users:
+    %p.small= @users.map{|u| u.screen_name}.join(', ')
+
+  - else
+    %p.small No users were used to retweet.
