@@ -43,7 +43,7 @@ helpers do
       rand = "RANDOM()" # if using SQLite
     end
 
-    @base_users = User.find_by_sql("SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users ORDER BY #{rand} LIMIT 10")
+    @base_users = User.find_by_sql("SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users WHERE active=1 ORDER BY #{rand} LIMIT 10")
     @base_users.each do |user|
       twitter_connect(user)
       unless @twitter_client.blank?
@@ -64,7 +64,7 @@ helpers do
       total = (User.count * (configatron.twitter_retweet_percent/100.to_f)).round
       total = configatron.twitter_retweet_max if total > configatron.twitter_retweet_max
 
-      @users = User.find_by_sql("SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users WHERE account_id!=#{@tweet.account_id} ORDER BY #{rand} LIMIT #{total}")
+      @users = User.find_by_sql("SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users WHERE account_id!=#{@tweet.account_id} AND active=1 ORDER BY #{rand} LIMIT #{total}")
       @users.each do |user|
         twitter_connect(user)
         unless @twitter_client.blank?
