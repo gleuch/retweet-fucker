@@ -2,6 +2,7 @@ require 'rubygems'
 require 'sinatra'
 require 'twitter_oauth'
 require 'configatron'
+require 'haml'
 
 configure do
   %w(dm-core dm-aggregates dm-timestamps user tweet).each { |lib| require lib }

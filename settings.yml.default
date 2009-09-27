@@ -1,6 +1,5 @@
 development: &local
   site_name:        Retweet Fucker
-  site_url:         http://localhost
 
   secret_launch_code:     FFFFFAT
 
@@ -21,9 +20,6 @@ development: &local
 
 production:
   <<: *local
-
-
-  site_url:		http://www.your-domain.com
 
 	# db_type:          mysql
 	# db_connection:    mysql://root:*****@localhost/rtfuck_prod
