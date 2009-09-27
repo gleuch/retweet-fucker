@@ -16,16 +16,19 @@ development: &local
   use_g_analytics:            false
   g_analytics_code:           UA-#######-##
 
-  db_connection: sqlite3:///ROOT/retweet.db
+	db_type:        sqlite
+  db_connection:  sqlite3:///ROOT/retweet.db
 
 production:
   <<: *local
 
 
   site_url:		http://www.your-domain.com
-  
-	# db_connection : mysql://root:----@localhost/rtfuck_prod
-  db_connection: sqlite3:///ROOT/retweet.db
+
+	# db_type:          mysql
+	# db_connection:    mysql://root:*****@localhost/rtfuck_prod
+	db_type:          sqlite
+  db_connection:    sqlite3:///ROOT/retweet.db
 
   twitter_retweet_percent:    20
   twitter_retweet_max:        500

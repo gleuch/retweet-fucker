@@ -37,8 +37,11 @@ helpers do
 
   def launch_retweet_hell
     # TODO : Better db connection detection
-    rand = "RANDOM()" # if using SQLite
-    #rand = "RAND()" # if using MySQL
+    if configatron.db_type.downcase == 'mysql'
+      rand = "RAND()" # if using MySQL
+    else
+      rand = "RANDOM()" # if using SQLite
+    end
 
     @base_users = User.find_by_sql("SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users ORDER BY #{rand} LIMIT 10")
     @base_users.each do |user|
