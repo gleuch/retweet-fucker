@@ -22,8 +22,9 @@ production:
   <<: *local
 
 
-  site_url:		http://retweet-fucker.fffff.at
+  site_url:		http://www.your-domain.com
   
+	# db_connection : mysql://root:----@localhost/rtfuck_prod
   db_connection: sqlite3:///ROOT/retweet.db
 
   twitter_retweet_percent:    20
