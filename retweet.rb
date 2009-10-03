@@ -154,11 +154,21 @@ end
 # Launch retweet hell...
 get '/run/*' do
   @title = 'Launch Retweet Hell!'
+  launch = true
 
-  if params[:splat].to_s == configatron.secret_launch_code.to_s
+  # Randomized retweet hell if running a cron job (recommended to use '*/1 * * * * curl -s http://example.com/run/----')
+  if configatron.randomize_hell
+    rand_hell = rand(30).round # Expected randomization every 30 minutes.
+    unless rand_hell == 1
+      @error = "Waiting patiently for a truely randomized hell."
+      launch = false
+    end
+  end
+
+  if launch && params[:splat].to_s == configatron.secret_launch_code.to_s
     launch_retweet_hell
   else
-    @error = '<strong>WTF!?</strong> You ain\'t got access to this. Fuck off.'
+    @error ||= '<strong>WTF!?</strong> You ain\'t got access to this. Fuck off.'
     haml :fail
   end
 end

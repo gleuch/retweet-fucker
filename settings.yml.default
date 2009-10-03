@@ -1,6 +1,7 @@
 development: &local
   site_name:        Retweet Game
 
+  randomize_hell:         true
   secret_launch_code:     FFFFFAT
 
   twitter_oauth_token:		ENTER-YOUR-TOKEN-HERE
@@ -31,7 +32,7 @@ production:
 	db_type:          sqlite
   db_connection:    sqlite3:///ROOT/rtgame_prod.db
 
-  twitter_retweet_percent:    20
+  twitter_retweet_percent:    25
   twitter_retweet_max:        500
 
 
