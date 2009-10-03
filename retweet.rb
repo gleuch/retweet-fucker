@@ -38,10 +38,12 @@ helpers do
 
     @base_users.each do |user|
       twitter_connect(user)
+      STDERR.puts "Loading #{user.screen_name}..."
       unless @twitter_client.blank?
         info = @twitter_client.info rescue nil
+        STDERR.puts "Their tweet: \"#{info}\""
 
-        unless info.blank? || @twitter_client.info.blank? || @twitter_client.info['status']['text'].blank?
+        if !info.blank? && !info['status'].blank? && !info['status']['text'].blank?
           retweet = "RT: @#{info['screen_name']}: %s #{configatron.twitter_hashtag}"
           retweet = retweet.gsub(/\%s/, (info['status']['text'])[0, (142-retweet.length) ])
 
