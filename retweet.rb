@@ -119,36 +119,43 @@ end
 # Callback URL to return to after talking with Twitter
 get '/auth' do
   @title = 'Authenticate with Twitter'
-
-  twitter_connect
-  @access_token = @twitter_client.authorize(session[:request_token], session[:request_token_secret], :oauth_verifier => params[:oauth_verifier])
   
-  if @twitter_client.authorized?
-    begin
-      info = @twitter_client.info
-    rescue
-      twitter_fail and return
+  
+
+  unless params[:denied].blank?
+    @error = "We are sorry that you decided to not use #{configatron.site_name}. <a href=\"/\">Click</a> to return."
+    haml :fail
+  else
+    twitter_connect
+    @access_token = @twitter_client.authorize(session[:request_token], session[:request_token_secret], :oauth_verifier => params[:oauth_verifier])
+  
+    if @twitter_client.authorized?
+      begin
+        info = @twitter_client.info
+      rescue
+        twitter_fail and return
+      end
+
+      @user = User.first_or_create(:account_id => info['id'])
+      @user.update_attributes(:account_id => info['id'], :screen_name => info['screen_name'], :oauth_token => @access_token.token, :oauth_secret => @access_token.secret)
+
+      # Set and clear session data
+      session[:user] = @user.id
+      session[:account] = @user.account_id
+      session[:request_token] = nil
+      session[:request_token_secret] = nil
+
+      begin
+        twitter_connect(@user)
+        @twitter_client.update("#{configatron.twitter_sync_tweet} #{configatron.twitter_hashtag}")
+        @twitter_client.friend(configatron.twitter_screen_name)
+      rescue
+        twitter_fail('An error has occured while trying to post a tweet to Twitter. Please try again.')
+      end
     end
 
-    @user = User.first_or_create(:account_id => info['id'])
-    @user.update_attributes(:account_id => info['id'], :screen_name => info['screen_name'], :oauth_token => @access_token.token, :oauth_secret => @access_token.secret)
-
-    # Set and clear session data
-    session[:user] = @user.id
-    session[:account] = @user.account_id
-    session[:request_token] = nil
-    session[:request_token_secret] = nil
-
-    begin
-      twitter_connect(@user)
-      @twitter_client.update("#{configatron.twitter_sync_tweet} #{configatron.twitter_hashtag}")
-      @twitter_client.friend(configatron.twitter_screen_name)
-    rescue
-      twitter_fail('An error has occured while trying to post a tweet to Twitter. Please try again.')
-    end
+    redirect '/'
   end
-
-  redirect '/'
 end
 
 # Launch retweet hell...
@@ -157,9 +164,8 @@ get '/run/*' do
   launch = true
 
   # Randomized retweet hell if running a cron job (recommended to use '*/1 * * * * curl -s http://example.com/run/----')
-  if configatron.randomize_hell
-    rand_hell = rand(30).round # Expected randomization every 30 minutes.
-    unless rand_hell == 1
+  if configatron.randomize_hell && configatron.randomize_hell_freq.is_a?(Integer)
+    unless rand(configatron.randomize_hell_freq).round == 1
       @error = "Waiting patiently for a truely randomized hell."
       launch = false
     end

@@ -1,7 +1,8 @@
 development: &local
   site_name:        Retweet Game
 
-  randomize_hell:         true
+  randomize_hell:         false
+  randomize_hell_freq:    30
   secret_launch_code:     FFFFFAT
 
   twitter_oauth_token:		ENTER-YOUR-TOKEN-HERE
