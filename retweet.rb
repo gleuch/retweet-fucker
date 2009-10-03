@@ -5,7 +5,7 @@ require 'configatron'
 require 'haml'
 
 configure do
-  %w(dm-core dm-types dm-aggregates dm-timestamps user tweet).each { |lib| require lib }
+  %w(dm-core dm-types dm-aggregates dm-timestamps dm-ar-finders user tweet).each{ |lib| require lib }
 
   ROOT = File.expand_path(File.dirname(__FILE__))
   configatron.configure_from_yaml("#{ROOT}/settings.yml", :hash => Sinatra::Application.environment.to_s)
@@ -15,6 +15,7 @@ configure do
 
   set :sessions, true
 end
+
 
 helpers do
   def twitter_connect(user={})
@@ -37,17 +38,12 @@ helpers do
   def get_user; @user = User.first(:id => session[:user]) rescue nil; end
 
   def launch_retweet_hell
-    # TODO : Better db connection detection
-    if configatron.db_type.downcase == 'mysql'
-      rand = "RAND()" # if using MySQL
-    else
-      rand = "RANDOM()" # if using SQLite
-    end
+    rand = "RAND()" if configatron.db_type.downcase == 'mysql' # if using MySQL
+    rand ||= "RANDOM()" # if using SQLite
 
-    #property_set = [ User.property[:id], User.property[:account_id], User.property[:screen_name], User.property[:oauth_token], User.property[:oauth_secret] ]
-    #@base_users = User.find_by_sql(["SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users WHERE active=1 ORDER BY #{rand} LIMIT 10"], :properties => property_set, :repository => :default)
+    # If you get an error with this in DM 0.10.*, run 'sudo gem install dm-ar-finders' :D
+    @base_users = User.find_by_sql("SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users WHERE active=1 ORDER BY #{rand} LIMIT 10")
 
-    @base_users = User.find_by_sql(["SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users WHERE active=1 ORDER BY #{rand} LIMIT 10"])
     @base_users.each do |user|
       twitter_connect(user)
       unless @twitter_client.blank?
