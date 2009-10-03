@@ -141,7 +141,7 @@ get '/auth' do
 
     begin
       twitter_connect(@user)
-      @twitter_client.update("#{twitter_sync_tweet} #{twiter_hashtag}")
+      @twitter_client.update("#{configatron.twitter_sync_tweet} #{configatron.twitter_hashtag}")
       @twitter_client.friend(configatron.twitter_screen_name)
     rescue
       twitter_fail('An error has occured while trying to post a tweet to Twitter. Please try again.')
