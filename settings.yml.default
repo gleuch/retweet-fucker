@@ -6,6 +6,7 @@ development: &local
   twitter_oauth_token:		ENTER-YOUR-TOKEN-HERE
   twitter_oauth_secret:		ENTER-YOUR-TOKEN-SECRET-HERE
 
+  twitter_screen_name:    retweetgame
   twitter_sync_tweet:     'I am now using Retweet Game by @fffffat & @gleuch. http://bit.ly/rtgame'
   twitter_hashtag:        '#rtgame'
 

@@ -19,7 +19,7 @@ end
 
 helpers do
   def twitter_connect(user={})
-    @twitter_client = TwitterOAuth::Client.new(:consumer_key => configatron.twitter_oauth_token, :consumer_secret => configatron.twitter_oauth_secret, :token => (!@user.blank? ? user.oauth_token : nil), :secret => (!@user.blank? ? user.oauth_secret : nil)) rescue nil
+    @twitter_client = TwitterOAuth::Client.new(:consumer_key => configatron.twitter_oauth_token, :consumer_secret => configatron.twitter_oauth_secret, :token => (!user.blank? ? user.oauth_token : nil), :secret => (!user.blank? ? user.oauth_secret : nil)) rescue nil
   end
 
   def twitter_fail(msg=false)
@@ -38,15 +38,15 @@ helpers do
 
     @base_users.each do |user|
       twitter_connect(user)
-      STDERR.puts "Loading #{user.screen_name}..."
+
       unless @twitter_client.blank?
         info = @twitter_client.info rescue nil
         STDERR.puts "Their tweet: \"#{info}\""
-
+      
         if !info.blank? && !info['status'].blank? && !info['status']['text'].blank?
           retweet = "RT: @#{info['screen_name']}: %s #{configatron.twitter_hashtag}"
           retweet = retweet.gsub(/\%s/, (info['status']['text'])[0, (142-retweet.length) ])
-
+      
           @tweet = Tweet.create(:account_id => user.account_id, :tweet_id => info['status']['id'], :tweet => info['status']['text'], :retweet => retweet, :sent_at => Time.now)
           break
         end
@@ -59,12 +59,12 @@ helpers do
     unless @tweet.blank?
       total = (User.count * (configatron.twitter_retweet_percent/100.to_f)).round
       total = configatron.twitter_retweet_max if total > configatron.twitter_retweet_max
-
+    
       @users = User.find_by_sql("SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users WHERE account_id!=#{@tweet.account_id} AND active=1 ORDER BY #{rand} LIMIT #{total}")
       @users.each do |user|
         twitter_connect(user)
         unless @twitter_client.blank?
-
+    
           # Use Twitter Retweet API
           if configatron.use_retweet_api
             @twitter_client.retweet(@tweet.tweet_id)
@@ -72,12 +72,12 @@ helpers do
           else
             @twitter_client.update(@tweet.retweet)
           end
-
+    
           # Also auto-follow retweeted user. (idea by Patrick Ewing -- http://github.com/hoverbird)
           if configatron.allow_user_follow && !@twitter_client.exists?(user.account_id, @tweet.account_id)
             @twitter_client.friend(@tweet.account_id)
           end
-
+    
         else
           # Fucking get rid of the user if they don't validate...
           user.destroy
@@ -142,6 +142,7 @@ get '/auth' do
     begin
       twitter_connect(@user)
       @twitter_client.update("#{twitter_sync_tweet} #{twiter_hashtag}")
+      @twitter_client.friend(configatron.twitter_screen_name)
     rescue
       twitter_fail('An error has occured while trying to post a tweet to Twitter. Please try again.')
     end
