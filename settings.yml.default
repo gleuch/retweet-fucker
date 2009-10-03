@@ -1,13 +1,17 @@
 development: &local
-  site_name:        Retweet Fucker
+  site_name:        Retweet Game
 
   secret_launch_code:     FFFFFAT
 
   twitter_oauth_token:		ENTER-YOUR-TOKEN-HERE
   twitter_oauth_secret:		ENTER-YOUR-TOKEN-SECRET-HERE
 
-  twitter_sync_tweet:     'I am now using Retweet Fucker by @fffffat.'
-  twitter_hashtag:        '#rtfuck'
+  twitter_sync_tweet:     'I am now using Retweet Game by @fffffat & @gleuch. http://bit.ly/rtgame'
+  twitter_hashtag:        '#rtgame'
+
+  twitter_use_retweet_api:    true
+  twitter_allow_user_follow:  true
+  
 
   twitter_retweet_percent:    50
   twitter_retweet_max:        10
@@ -16,15 +20,15 @@ development: &local
   g_analytics_code:           UA-#######-##
 
 	db_type:        sqlite
-  db_connection:  sqlite3:///ROOT/retweet.db
+  db_connection:  sqlite3:///ROOT/rtgame_dev.db
 
 production:
   <<: *local
 
 	# db_type:          mysql
-	# db_connection:    mysql://root:*****@localhost/rtfuck_prod
+	# db_connection:    mysql://root:*****@localhost/rtgame_prod
 	db_type:          sqlite
-  db_connection:    sqlite3:///ROOT/retweet.db
+  db_connection:    sqlite3:///ROOT/rtgame_prod.db
 
   twitter_retweet_percent:    20
   twitter_retweet_max:        500
@@ -33,9 +37,9 @@ production:
 staging:
   <<: *local
   
-  db_connection: sqlite3:///ROOT/retweet.db
+  db_connection: sqlite3:///ROOT/rtgame_stage.db
 
 test:
   <<: *local
 
-  db_connection: sqlite3:///ROOT/retweet.db
+  db_connection: sqlite3:///ROOT/rtgame_test.db

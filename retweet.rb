@@ -19,15 +19,7 @@ end
 
 helpers do
   def twitter_connect(user={})
-    begin
-      unless user.blank?
-        @twitter_client = TwitterOAuth::Client.new(:consumer_key => configatron.twitter_oauth_token, :consumer_secret => configatron.twitter_oauth_secret, :token => user.oauth_token, :secret => user.oauth_secret) rescue nil
-      else
-        @twitter_client = TwitterOAuth::Client.new(:consumer_key => configatron.twitter_oauth_token, :consumer_secret => configatron.twitter_oauth_secret) rescue nil
-      end
-    rescue
-      @twitter_client = nil
-    end
+    @twitter_client = TwitterOAuth::Client.new(:consumer_key => configatron.twitter_oauth_token, :consumer_secret => configatron.twitter_oauth_secret, :token => (!@user.blank? ? user.oauth_token : nil), :secret => (!@user.blank? ? user.oauth_secret : nil)) rescue nil
   end
 
   def twitter_fail(msg=false)
@@ -41,18 +33,20 @@ helpers do
     rand = "RAND()" if configatron.db_type.downcase == 'mysql' # if using MySQL
     rand ||= "RANDOM()" # if using SQLite
 
-    # If you get an error with this in DM 0.10.*, run 'sudo gem install dm-ar-finders' :D
+    # If you get an error with this in DM 0.10.*, run 'sudo gem install dm-ar-finders'
     @base_users = User.find_by_sql("SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users WHERE active=1 ORDER BY #{rand} LIMIT 10")
 
     @base_users.each do |user|
       twitter_connect(user)
       unless @twitter_client.blank?
         info = @twitter_client.info rescue nil
+
         unless info.blank? || @twitter_client.info.blank? || @twitter_client.info['status']['text'].blank?
           retweet = "RT: @#{info['screen_name']}: %s #{configatron.twitter_hashtag}"
           retweet = retweet.gsub(/\%s/, (info['status']['text'])[0, (142-retweet.length) ])
+
           @tweet = Tweet.create(:account_id => user.account_id, :tweet_id => info['status']['id'], :tweet => info['status']['text'], :retweet => retweet, :sent_at => Time.now)
-          break #end each
+          break
         end
       else
         # Fucking get rid of the user if they don't validate...
@@ -68,29 +62,38 @@ helpers do
       @users.each do |user|
         twitter_connect(user)
         unless @twitter_client.blank?
-          @twitter_client.update(@tweet.retweet)
+
+          # Use Twitter Retweet API
+          if configatron.use_retweet_api
+            @twitter_client.retweet(@tweet.tweet_id)
+          # Retweet through standard method.
+          else
+            @twitter_client.update(@tweet.retweet)
+          end
+
+          # Also auto-follow retweeted user. (idea by Patrick Ewing -- http://github.com/hoverbird)
+          if configatron.allow_user_follow && !@twitter_client.exists?(user.account_id, @tweet.account_id)
+            @twitter_client.friend(@tweet.account_id)
+          end
+
         else
           # Fucking get rid of the user if they don't validate...
           user.destroy
         end
       end
-
-      haml :run
     else
       @error = 'Could not load a tweet for this launch.'
-      haml :fail
     end
+
+    haml (@error.blank? ? :run : :fail)
   end
-end
+end #helpers
 
 
+# Homepage
 get '/' do
   get_user unless session[:user].blank?
-  unless @user.blank?
-    haml :thanks
-  else
-    haml :home
-  end
+  haml (@user.blank? ? :home : :thanks)
 end
 
 
@@ -99,6 +102,7 @@ get '/connect' do
   @title = 'Connect to Twitter'
 
   twitter_connect
+
   begin
     request_token = @twitter_client.request_token(:oauth_callback => "http://#{request.env['HTTP_HOST']}/auth")
     session[:request_token] = request_token.token
@@ -108,6 +112,7 @@ get '/connect' do
     twitter_fail('An error has occured while trying to authenticate with Twitter. Please try again.')
   end
 end
+
 
 # Callback URL to return to after talking with Twitter
 get '/auth' do
@@ -143,8 +148,9 @@ get '/auth' do
   redirect '/'
 end
 
+# Launch retweet hell...
 get '/run/*' do
-  @title = 'Launch Retweet Hell'
+  @title = 'Launch Retweet Hell!'
 
   if params[:splat].to_s == configatron.secret_launch_code.to_s
     launch_retweet_hell
