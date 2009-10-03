@@ -21,6 +21,9 @@
 
   %head
     %title= (!@title.blank? ? "#{@title} / " : '') + "#{configatron.site_name} / a F.A.T. Lab Project"
+    %meta{:"http-equiv" => 'Content-Type', :content => 'text/html; charset=utf-8'}
+    %meta{:name => 'keywords', :content => "#{configatron.site_name}, Twitter, retweet, API, Greg Leuch, F.A.T. Lab, art, code"}
+    %meta{:name => 'description', :content => "Expand your Twitter reach through mass retweets #{configatron.twitter_allow_user_follow ? 'and followings' : ''} by joining #{configatron.site_name}."}
     %link{:rel=>'icon', :href=>'/favicon.ico'}
     %link{:href=>'/stylesheets/screen.css', :media=>'all', :rel =>'stylesheet', :type=>'text/css'}
 
@@ -28,7 +31,7 @@
     #container
       #header<>
         %h1
-          %a{:href => '/'}= configatron.site_name
+          %a{:href => '/'} The Twitter #{configatron.site_name}
 
       #content_area
         #content_bubble
