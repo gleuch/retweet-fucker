@@ -27,7 +27,10 @@ p.button a.button:hover {background: #d800d8; border-color: #d800d8;}
 .results_box {padding: 16px 0 0 0; margin: 6px 0 0 0; border-top: 1px solid #e0e0e0;}
 
 
-#footer {padding: 80px 0 30px 0; text-align: center; font-size: 16px; letter-spacing: -.02em;}
+#donation_box {padding: 40px 0 0 0; text-align: center;}
+
+
+#footer {padding: 60px 0 30px 0; text-align: center; font-size: 16px; letter-spacing: -.02em;}
 #footer a.bold {font-weight: bold;}
 #footer a {color: #c900b7; text-decoration: underline;}
 #footer a:hover {color: #c900b7; text-decoration: none;}

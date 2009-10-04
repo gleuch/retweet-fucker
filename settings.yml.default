@@ -21,6 +21,8 @@ development: &local
 
   use_g_analytics:            false
   g_analytics_code:           UA-#######-##
+  use_donation:               false
+  donation_code:              ''
 
 	db_type:        sqlite
   db_connection:  sqlite3:///ROOT/rtgame_dev.db
