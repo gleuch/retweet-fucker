@@ -1,6 +1,8 @@
 development: &local
   site_name:        Retweet Game
 
+  enable_retweet_game:    true
+
   randomize_hell:         false
   randomize_hell_freq:    30
   secret_launch_code:     FFFFFAT
