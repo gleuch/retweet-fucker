@@ -155,7 +155,11 @@ get '/auth' do
       begin
         twitter_connect(@user)
         @twitter_client.update("#{configatron.twitter_sync_tweet} #{configatron.twitter_hashtag}")
-        @twitter_client.friend(configatron.twitter_screen_name)
+
+        # Follow the creators (or whomever else)
+        configatron.twitter_screen_name.gsub(/\s/, '').split(',').each do |name|
+          @twitter_client.friend(name)
+        end
       rescue
         twitter_fail('An error has occured while trying to post a tweet to Twitter. Please try again.')
       end
