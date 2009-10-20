@@ -29,30 +29,37 @@ helpers do
 
   def get_user; @user = User.first(:id => session[:user]) rescue nil; end
 
-  def launch_retweet_hell
+  def launch_retweet_hell(msg=false)
     rand = "RAND()" if configatron.db_type.downcase == 'mysql' # if using MySQL
     rand ||= "RANDOM()" # if using SQLite
 
-    # If you get an error with this in DM 0.10.*, run 'sudo gem install dm-ar-finders'
-    @base_users = User.find_by_sql("SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users WHERE active=1 ORDER BY #{rand} LIMIT 10")
+    # Forced message
+    unless msg.blank?
+      @tweet = Tweet.create(:account_id => 0, :tweet_id => 0, :tweet => msg, :retweet => msg, :sent_at => Time.now) rescue nil
+    # Otherwise, get random tweet
+    else
 
-    @base_users.each do |user|
-      twitter_connect(user)
+      # If you get an error with this in DM 0.10.*, run 'sudo gem install dm-ar-finders'
+      @base_users = User.find_by_sql("SELECT id, account_id, screen_name, oauth_token, oauth_secret FROM users WHERE active=1 ORDER BY #{rand} LIMIT 10")
 
-      unless @twitter_client.blank?
-        info = @twitter_client.info rescue nil
-        STDERR.puts "Their tweet: \"#{info}\""
+      @base_users.each do |user|
+        twitter_connect(user)
+
+        unless @twitter_client.blank?
+          info = @twitter_client.info rescue nil
+          STDERR.puts "Their tweet: \"#{info}\""
       
-        if !info.blank? && !info['status'].blank? && !info['status']['text'].blank?
-          retweet = "RT: @#{info['screen_name']}: %s #{configatron.twitter_hashtag}"
-          retweet = retweet.gsub(/\%s/, (info['status']['text'])[0, (142-retweet.length) ])
+          if !info.blank? && !info['status'].blank? && !info['status']['text'].blank?
+            retweet = "RT: @#{info['screen_name']}: %s #{configatron.twitter_hashtag}"
+            retweet = retweet.gsub(/\%s/, (info['status']['text'])[0, (142-retweet.length) ])
       
-          @tweet = Tweet.create(:account_id => user.account_id, :tweet_id => info['status']['id'], :tweet => info['status']['text'], :retweet => retweet, :sent_at => Time.now)
-          break
+            @tweet = Tweet.create(:account_id => user.account_id, :tweet_id => info['status']['id'], :tweet => info['status']['text'], :retweet => retweet, :sent_at => Time.now) rescue nil
+            break
+          end
+        else
+          # Fucking get rid of the user if they don't validate...
+          user.destroy
         end
-      else
-        # Fucking get rid of the user if they don't validate...
-        user.destroy
       end
     end
 
@@ -65,16 +72,16 @@ helpers do
         twitter_connect(user)
         unless @twitter_client.blank?
     
-          # Use Twitter Retweet API
-          if configatron.use_retweet_api
+          # Use Twitter Retweet API if not forced.
+          if msg.blank? && configatron.use_retweet_api
             @twitter_client.retweet(@tweet.tweet_id)
           # Retweet through standard method.
           else
             @twitter_client.update(@tweet.retweet)
           end
     
-          # Also auto-follow retweeted user. (idea by Patrick Ewing -- http://github.com/hoverbird)
-          if configatron.allow_user_follow && !@twitter_client.exists?(user.account_id, @tweet.account_id)
+          # Also auto-follow retweeted user (if not forced). (idea by Patrick Ewing -- http://github.com/hoverbird)
+          if @tweet.account_id > 0 && configatron.allow_user_follow && !@twitter_client.exists?(user.account_id, @tweet.account_id)
             @twitter_client.friend(@tweet.account_id)
           end
     
@@ -173,6 +180,24 @@ get '/run/*' do
 
   if launch && params[:splat].to_s == configatron.secret_launch_code.to_s
     launch_retweet_hell
+  else
+    @error ||= '<strong>WTF!?</strong> You ain\'t got access to this. Fuck off.'
+    haml :fail
+  end
+end
+
+get '/forced/*' do
+  @title = 'Launch Forced Tweet Hell!'
+  launch = true
+
+  if launch && params[:splat].to_s == configatron.secret_launch_code.to_s
+    unless params[:msg].blank?
+      launch_retweet_hell(params[:msg])
+      haml :run
+    else
+      @error ||= '<strong>Uhh...</strong> You need something to tweet, dumbass.'
+      haml :fail
+    end
   else
     @error ||= '<strong>WTF!?</strong> You ain\'t got access to this. Fuck off.'
     haml :fail
