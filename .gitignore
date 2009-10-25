@@ -1,3 +1,5 @@
 settings.yml
 retweet.db
 config.ru
+public/posterchild
+views/posterchild
