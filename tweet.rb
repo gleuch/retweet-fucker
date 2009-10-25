@@ -3,6 +3,7 @@ class Tweet
 
   property :id,               Serial
   property :account_id,       Integer
+  property :screen_name,      String
   property :tweet_id,         String
   property :tweet,            Text
   property :retweet,          Text

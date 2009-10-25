@@ -1,5 +1,9 @@
 development: &local
-  site_name:        Retweet Game
+  site_name:        'Retweet Game'
+  group_name:       'Your NON-COMMERCIAL Organization Name' # Seriously, this is for non-commercial use only!
+  group_website:    http://www.fffff.at
+
+  template_name:          default
 
   enable_retweet_game:    true
 

@@ -32,18 +32,30 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
+LICENSE
+  - You may use this program if you agree to the following:
+    - You are a non-commercial entity focused on using this for good-natured purposes only.
+    - You must leave the header comment and footer credit intact.
+      *** To change the group name in the footer, edit the group_name field in your settings. ***
+
+INSTALLATION
+  - Clone this repo (git clone git://github.com/gleuch/retweet-fucker.git) into a web-accessible directory.
+  - Rename settings.yml.default to settings.yml
+      *** Change settings as needed. Be sure to add your Twitter OAuth key and secret strings! ***
+  - Run.
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 KNOWN BUGS
   - None, at the moment.
-
 
 TODO
   - None, at the moment.
 
-
 NOTES
   - With DataMapper > 0.10.0, you may get a NoMethodError on 'find_by_sql'. To fix, install the dm-ar-finders gem.
 
-
 THANKS
   Props to Jamie Wilkinson (http://www.jamiedubs.com) for guidance, and Patrick Ewing (http://project.ioni.st/) for
-  additional followers idea. And always, the F.A.T. Lab gang (http://www.fffff.at)
+  additional followers idea. And always, the F.A.T. Lab crew (http://www.fffff.at)!
