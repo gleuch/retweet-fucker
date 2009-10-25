@@ -4,6 +4,7 @@ development: &local
   group_website:    http://www.fffff.at
 
   template_name:          default
+  enable_memcache:        true
 
   enable_retweet_game:    true
 

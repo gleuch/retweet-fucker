@@ -3,6 +3,8 @@ require 'sinatra'
 require 'twitter_oauth'
 require 'configatron'
 require 'haml'
+require 'sinatra/memcache'
+
 
 configure do
   %w(dm-core dm-types dm-aggregates dm-timestamps dm-ar-finders user tweet).each{ |lib| require lib }
@@ -13,6 +15,8 @@ configure do
   DataMapper.setup(:default, configatron.db_connection.gsub(/ROOT/, ROOT))
   DataMapper.auto_upgrade!
 
+  set :cache_enable, (configatron.enable_memcache && Sinatra::Application.environment.to_s == 'production')
+  set :cache_logging, false # causes problems if using w/ partials! :/
   set :sessions, true
   set :views, File.dirname(__FILE__) + '/views/'+ configatron.template_name
   set :public, File.dirname(__FILE__) + '/public/'+ configatron.template_name
@@ -103,12 +107,20 @@ helpers do
 
   def partial(name, options = {})
     item_name, counter_name = name.to_sym, "#{name}_counter".to_sym
+    options = {:cache => true, :cache_expiry => 300}.merge(options)
+
     if collection = options.delete(:collection)
       collection.enum_for(:each_with_index).collect{|item, index| partial(name, options.merge(:locals => { item_name => item, counter_name => index + 1 }))}.join
     elsif object = options.delete(:object)
       partial(name, options.merge(:locals => {item_name => object, counter_name => nil}))
     else
-      haml "_#{name}".to_sym, options.merge(:layout => false)
+      unless options[:cache].blank?
+        cache "_#{name}", :expiry => (options[:cache_expiry].blank? ? 300 : options[:cache_expiry]), :compress => false do
+          haml "_#{name}".to_sym, options.merge(:layout => false)
+        end
+      else
+        haml "_#{name}".to_sym, options.merge(:layout => false)
+      end
     end
   end
 
@@ -146,14 +158,16 @@ end
 # Homepage
 get '/' do
   get_user unless session[:user].blank?
-  haml (@user.blank? ? :home : :thanks)
+
+  cache "homepage/#{@user.blank? ? 'guest' : 'user/#{@user.id}'}", :expiry => 600, :compress => true do
+    haml (@user.blank? ? :home : :thanks)
+  end
 end
 
 
 # Initiate the conversation with Twitter
 get '/connect' do
   @title = 'Connect to Twitter'
-
   twitter_connect
 
   begin
@@ -162,20 +176,22 @@ get '/connect' do
     session[:request_token_secret] = request_token.secret
     redirect request_token.authorize_url.gsub('authorize', 'authenticate')
   rescue
-    twitter_fail('An error has occured while trying to authenticate with Twitter. Please try again.')
+    cache 'error/connect', :expiry => 600, :compress => false do
+      twitter_fail('An error has occured while trying to authenticate with Twitter. Please try again.')
+    end
   end
 end
 
 
 # Callback URL to return to after talking with Twitter
 get '/auth' do
-  @title = 'Authenticate with Twitter'
-  
-  
+  @title = 'Authenticate with Twitter'  
 
   unless params[:denied].blank?
-    @error = "We are sorry that you decided to not use #{configatron.site_name}. <a href=\"/\">Click</a> to return."
-    haml :fail
+    cache 'error/auth/denied', :expiry => 600, :compress => false do
+      @error = "We are sorry that you decided to not use #{configatron.site_name}. <a href=\"/\">Click</a> to return."
+      haml :fail
+    end
   else
     twitter_connect
     @access_token = @twitter_client.authorize(session[:request_token], session[:request_token_secret], :oauth_verifier => params[:oauth_verifier])
@@ -205,7 +221,9 @@ get '/auth' do
           @twitter_client.friend(name) unless dev?
         end
       rescue
-        twitter_fail('An error has occured while trying to post a tweet to Twitter. Please try again.')
+        cache 'error/auth/fail', :expiry => 600, :compress => false do
+          twitter_fail('An error has occured while trying to post a tweet to Twitter. Please try again.')
+        end
       end
     end
 
@@ -216,20 +234,19 @@ end
 # Launch retweet hell...
 get '/run/*' do
   @title = 'Launch Retweet Hell!'
-  launch = params[:splat].to_s == configatron.secret_launch_code.to_s
+  allowed, launch = params[:splat].to_s == configatron.secret_launch_code.to_s, true
 
-  @error = '<strong>WTF!?</strong> You ain\'t got access to this. Fuck off.' unless launch
-
+  @error = '<strong>WTF!?</strong> You ain\'t got access to this. Fuck off.' unless allowed
 
   # Randomized retweet hell if running a cron job (recommended to use '*/1 * * * * curl -s http://example.com/run/----')
-  if launch && configatron.randomize_hell && configatron.randomize_hell_freq.is_a?(Integer)
+  if allowed && configatron.randomize_hell && configatron.randomize_hell_freq.is_a?(Integer)
     unless rand(configatron.randomize_hell_freq).round == 1
       @error = "Waiting patiently for a truely randomized hell."
       launch = false
     end
   end
 
-  if launch
+  if launch && allowed
     launch_retweet_hell
   else
     haml :fail
