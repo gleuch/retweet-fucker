@@ -7,7 +7,7 @@ require 'sinatra/memcache'
 
 
 configure do
-  %w(dm-core dm-types dm-aggregates dm-timestamps dm-ar-finders user tweet).each{ |lib| require lib }
+  %w(dm-core dm-types dm-validations dm-aggregates dm-timestamps dm-ar-finders user tweet).each{ |lib| require lib }
 
   ROOT = File.expand_path(File.dirname(__FILE__))
   configatron.configure_from_yaml("#{ROOT}/settings.yml", :hash => Sinatra::Application.environment.to_s)
@@ -62,11 +62,12 @@ helpers do
             retweet = retweet.gsub(/\%s/, (info['status']['text'])[0, (142-retweet.length) ])
       
             @tweet = Tweet.create(:account_id => user.account_id, :screen_name => user.screen_name, :tweet_id => info['status']['id'], :tweet => info['status']['text'], :retweet => retweet, :sent_at => Time.now) rescue nil
+            user.update_attributes(:retweeted_at => Time.now)
             break
           end
         else
-          # Fucking get rid of the user if they don't validate...
-          user.destroy
+          # Get rid of the user if they don't validate...
+          user.update_attributes(:active => false)
         end
       end
     end
@@ -94,8 +95,8 @@ helpers do
           end
     
         else
-          # Fucking get rid of the user if they don't validate...
-          user.destroy
+          # Get rid of the user if they don't validate...
+          user.update_attributes(:active => false)
         end
       end
     else
@@ -204,7 +205,7 @@ get '/auth' do
       end
 
       @user = User.first_or_create(:account_id => info['id'])
-      @user.update_attributes(:account_id => info['id'], :screen_name => info['screen_name'], :oauth_token => @access_token.token, :oauth_secret => @access_token.secret)
+      @user.update_attributes(:active => true, :account_id => info['id'], :screen_name => info['screen_name'], :oauth_token => @access_token.token, :oauth_secret => @access_token.secret)
 
       # Set and clear session data
       session[:user] = @user.id
